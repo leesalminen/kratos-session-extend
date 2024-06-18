@@ -1,0 +1,11 @@
+displayName: Kratos Session Extend
+type: middleware
+iconPath: .assets/icon.png
+
+import: github.com/leesalminen/kratos-session-extend
+
+summary: 'Extend Kratos User Sessions Automatically'
+
+testData:
+  cacheSeconds: 300
+  sessionCookie: "my_session"
