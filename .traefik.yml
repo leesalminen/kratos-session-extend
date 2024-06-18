@@ -7,5 +7,9 @@ import: github.com/leesalminen/kratos-session-extend
 summary: 'Extend Kratos User Sessions Automatically'
 
 testData:
-  cacheSeconds: 300
+  cacheSeconds: 10
   sessionCookie: "my_session"
+  lastRefreshedCookie: "my_session_last_refreshed"
+  identityApiBaseUrl: "http://127.0.0.1:4433"
+  adminApiBaseUrl: "http://127.0.0.1:4434"
+  signingKey: "THIS_IS_DANGEROUS_CHANGE_ME"
