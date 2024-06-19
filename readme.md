@@ -28,7 +28,7 @@ experimental:
   plugins:
     kratos-session-extend:
       moduleName: github.com/leesalminen/kratos-session-extend
-      version: v0.1.0
+      version: v0.2.0
 ```
 
 Here is an example of a file provider dynamic configuration (given here in YAML), where the interesting part is the `http.middlewares` section:
