@@ -97,7 +97,7 @@ func (a *KratosSessionExtend) ServeHTTP(rw http.ResponseWriter, req *http.Reques
     // Proceed to the next handler if there is no cache cookie & set it for the next request
     if err != nil || lastRefreshedCookie.Value == "" {
         fmt.Println("lastRefreshedCookie no value")
-        a.setCacheCookie(rw)
+        a.setCacheCookie(rw, nil)
         a.next.ServeHTTP(rw, req)
         return
     }
@@ -107,7 +107,7 @@ func (a *KratosSessionExtend) ServeHTTP(rw http.ResponseWriter, req *http.Reques
     // Proceed to the next handler if the cache cookie is incorrectly formatted. & set it for the next request
     if len(cookieParts) != 2 {
         fmt.Println("lastRefreshedCookie incorrect format")
-        a.setCacheCookie(rw)
+        a.setCacheCookie(rw, nil)
         a.next.ServeHTTP(rw, req)
         return
     }
@@ -115,7 +115,7 @@ func (a *KratosSessionExtend) ServeHTTP(rw http.ResponseWriter, req *http.Reques
     // Proceed to the next handler if signature verification failed & set it for the next request
     if !a.verifyValue(cookieParts[0], cookieParts[1]) {
         fmt.Println("lastRefreshedCookie signature failed")
-        a.setCacheCookie(rw)
+        a.setCacheCookie(rw, nil)
         a.next.ServeHTTP(rw, req)
         return
     }
@@ -125,7 +125,7 @@ func (a *KratosSessionExtend) ServeHTTP(rw http.ResponseWriter, req *http.Reques
     // Proceed to the next handler if the cache cookie timestamp is invalid & set it properly for the next request
     if err != nil || i == 0 {
         fmt.Println("lastRefreshedCookie timestamp parse failed")
-        a.setCacheCookie(rw)
+        a.setCacheCookie(rw, nil)
         a.next.ServeHTTP(rw, req)
         return
     }
@@ -144,9 +144,6 @@ func (a *KratosSessionExtend) ServeHTTP(rw http.ResponseWriter, req *http.Reques
         // Confirm that the session is active before extending the session
         if session.Active {
             if a.extendSession(session) {
-                // Set the cache cookie now that we have extended the session
-                a.setCacheCookie(rw)
-
                 session, err := a.getSession(sessionCookie, authToken)
                 if err != nil {
                     fmt.Println("getSession error:", err)
@@ -155,6 +152,10 @@ func (a *KratosSessionExtend) ServeHTTP(rw http.ResponseWriter, req *http.Reques
                 }
 
                 a.setExtendedSessionCookie(rw, sessionCookie, session)
+
+                // Set the cache cookie now that we have extended the session
+                a.setCacheCookie(rw, &session)
+
             }
         }
     }
@@ -240,11 +241,23 @@ func (a *KratosSessionExtend) extendSession(session Session) bool {
     return true
 }
 
-func (a *KratosSessionExtend) setCacheCookie(rw http.ResponseWriter) {
+func (a *KratosSessionExtend) setCacheCookie(rw http.ResponseWriter, session *Session) {
     nowUnixTimestamp := strconv.Itoa(int(time.Now().Unix()))
     // Create the signed value
     signedValue := a.signValue(nowUnixTimestamp)
     cookieValue := fmt.Sprintf("%s|%s", nowUnixTimestamp, signedValue)
+
+    var expires time.Time
+    var err error
+
+    if session != nil {
+        expires, err = time.Parse("2006-01-02T15:04:05.999999Z", session.ExpiresAt)
+        if err != nil {
+            fmt.Println("Error parsing time:", err)
+            fmt.Println("Timestamp string:", session.ExpiresAt)
+            return
+        }
+    }
 
     http.SetCookie(rw, &http.Cookie{
         Name:     a.lastRefreshedCookie,
@@ -254,6 +267,7 @@ func (a *KratosSessionExtend) setCacheCookie(rw http.ResponseWriter) {
         // Secure:   true, // Ensure cookie is only transmitted over HTTPS
         SameSite: http.SameSiteLaxMode,
         Domain: a.cookieDomain,
+        Expires: expires,
     })
 
 }
