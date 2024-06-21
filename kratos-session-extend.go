@@ -20,6 +20,7 @@ type Config struct {
     CacheSeconds      int
     SessionCookie     string
     LastRefreshedCookie string
+    CookieDomain string
     IdentityApiBaseUrl string
     AdminApiBaseUrl   string
     SigningKey string
@@ -31,6 +32,7 @@ func CreateConfig() *Config {
         CacheSeconds:      300,
         SessionCookie:     "my_session",
         LastRefreshedCookie: "my_session_last_refreshed",
+        CookieDomain: "127.0.0.1",
         IdentityApiBaseUrl: "http://127.0.0.1:4433",
         AdminApiBaseUrl:   "http://127.0.0.1:4434",
         SigningKey: "dangerous_change_me",
@@ -42,6 +44,7 @@ type KratosSessionExtend struct {
     cacheSeconds      int
     sessionCookie     string
     lastRefreshedCookie string
+    cookieDomain string
     identityApiBaseUrl string
     adminApiBaseUrl   string
     signingKey []uint8
@@ -61,6 +64,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
         cacheSeconds:      config.CacheSeconds,
         sessionCookie:     config.SessionCookie,
         lastRefreshedCookie: config.LastRefreshedCookie,
+        cookieDomain: config.CookieDomain,
         identityApiBaseUrl: config.IdentityApiBaseUrl,
         adminApiBaseUrl:   config.AdminApiBaseUrl,
         signingKey: signingKey,
@@ -249,6 +253,7 @@ func (a *KratosSessionExtend) setCacheCookie(rw http.ResponseWriter) {
         HttpOnly: true,
         // Secure:   true, // Ensure cookie is only transmitted over HTTPS
         SameSite: http.SameSiteLaxMode,
+        Domain: a.cookieDomain,
     })
 
 }

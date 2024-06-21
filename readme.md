@@ -60,6 +60,7 @@ http:
             cacheSeconds: 300
             sessionCookie: "my_session"
             lastRefreshedCookie: "my_session_last_refreshed"
+            cookieDomain: "127.0.0.1"
             identityApiBaseUrl: "http://127.0.0.1:4433"
             adminApiBaseUrl: "http://127.0.0.1:4434"
             signingKey: "THIS_IS_DANGEROUS_CHANGE_ME"
