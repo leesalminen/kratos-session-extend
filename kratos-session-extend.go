@@ -56,6 +56,7 @@ type Session struct {
     ID     string `json:"id"`
     Active bool   `json:"active"`
     ExpiresAt string `json:"expires_at"`
+    KratosCookies []*http.Cookie
 }
 
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
@@ -200,6 +201,8 @@ func (a *KratosSessionExtend) getSession(sessionCookie *http.Cookie, authToken s
         return session, fmt.Errorf("unmarshaling response body: %w", err)
     }
 
+    session.KratosCookies = resp.Cookies()
+
     return session, nil
 }
 
@@ -273,21 +276,10 @@ func (a *KratosSessionExtend) setCacheCookie(rw http.ResponseWriter, session *Se
 }
 
 func (a *KratosSessionExtend) setExtendedSessionCookie(rw http.ResponseWriter, sessionCookie *http.Cookie, session Session) {
-    updatedCookie := sessionCookie
-
-    // Parse the timestamp string into a time.Time object
-    parsedTime, err := time.Parse("2006-01-02T15:04:05.999999Z", session.ExpiresAt)
-    if err != nil {
-        fmt.Println("Error parsing time:", err)
-        fmt.Println("Timestamp string:", session.ExpiresAt)
-        return
-    }
-
-    // Set the expiration time of the cookie
-    updatedCookie.Expires = parsedTime
-
     // Update the cookie in the response writer
-    http.SetCookie(rw, updatedCookie)
+    for _, cookie := range session.KratosCookies {
+        http.SetCookie(rw, cookie)
+    }
 }
 
 func (a *KratosSessionExtend) signValue(value string) string {
